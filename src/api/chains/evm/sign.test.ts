@@ -79,6 +79,7 @@ describe('signPayload EIP-712 domain.chainId validation', () => {
       type: 'eip712',
       domain: { name: 'MyProtocol', chainId: 1 },
       types: baseTypes,
+      primaryType: 'Transfer',
       message: baseMessage,
     }, 'test-token');
 
@@ -91,6 +92,7 @@ describe('signPayload EIP-712 domain.chainId validation', () => {
       type: 'eip712',
       domain: { name: 'MyProtocol', chainId: 56 },
       types: baseTypes,
+      primaryType: 'Transfer',
       message: baseMessage,
     }, 'test-token');
 
@@ -103,6 +105,7 @@ describe('signPayload EIP-712 domain.chainId validation', () => {
       type: 'eip712',
       domain: { name: 'MyProtocol' },
       types: baseTypes,
+      primaryType: 'Transfer',
       message: baseMessage,
     }, 'test-token');
 
@@ -116,10 +119,24 @@ describe('signPayload EIP-712 domain.chainId validation', () => {
       type: 'eip712',
       domain: { name: 'MyProtocol', chainId: 56 },
       types: baseTypes,
+      primaryType: 'Transfer',
       message: baseMessage,
     }, 'test-token');
 
     expect(fetchPrivateKeyString).toHaveBeenCalled();
     expect('error' in result).toBe(false);
+  });
+
+  it.each([1.5, 'abc', {}, -1, true])('rejects malformed domain.chainId %p without throwing', async (chainId) => {
+    const result = await signPayload('bnb', '0-mainnet', {
+      type: 'eip712',
+      domain: { name: 'MyProtocol', chainId },
+      types: baseTypes,
+      primaryType: 'Transfer',
+      message: baseMessage,
+    }, 'test-token');
+
+    expect(result).toEqual({ error: ApiTransactionError.WrongNetwork });
+    expect(fetchPrivateKeyString).not.toHaveBeenCalled();
   });
 });

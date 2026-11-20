@@ -23,7 +23,14 @@ export async function signPayload(
   if (payloadToSign.type === 'eip712') {
     const { chainId } = payloadToSign.domain;
     if (chainId !== undefined && chainId !== 0) {
-      if (!getIsEvmTransactionChainValid(BigInt(chainId), chain, network)) {
+      let id: bigint | undefined;
+      try {
+        id = typeof chainId === 'number' || typeof chainId === 'string' || typeof chainId === 'bigint'
+          ? BigInt(chainId) : undefined;
+      } catch {
+        // malformed value (1.5, 'abc') -> rejected below
+      }
+      if (id === undefined || !getIsEvmTransactionChainValid(id, chain, network)) {
         return { error: ApiTransactionError.WrongNetwork };
       }
     }
