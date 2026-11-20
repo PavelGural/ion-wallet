@@ -18,6 +18,17 @@ export async function signPayload(
 
   const { network } = parseAccountId(accountId);
 
+  // Validate domain.chainId before accessing the private key: a dApp connected on one chain must
+  // not obtain a signature valid on a different chain (e.g. BNB-mainnet dApp → chainId:1 Ethereum).
+  if (payloadToSign.type === 'eip712') {
+    const { chainId } = payloadToSign.domain;
+    if (chainId !== undefined && chainId !== 0) {
+      if (!getIsEvmTransactionChainValid(BigInt(chainId), chain, network)) {
+        return { error: ApiTransactionError.WrongNetwork };
+      }
+    }
+  }
+
   const privateKey = await fetchPrivateKeyString(chain, accountId, enclaveToken);
   if (!privateKey) return { error: ApiCommonError.InvalidPassword };
 
